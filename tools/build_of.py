@@ -5,7 +5,7 @@ import glob
 import sys
 from pipes import quote
 from multiprocessing import Pool, current_process
-
+import ipdb
 import argparse
 out_path = ''
 
@@ -35,6 +35,7 @@ def dump_frames(vid_path):
 
 def run_optical_flow(vid_item, dev_id=0):
     vid_path = vid_item[0]
+    
     vid_id = vid_item[1]
     vid_name = vid_path.split('/')[-1].split('.')[0]
     out_full_path = os.path.join(out_path, vid_name)
@@ -44,14 +45,18 @@ def run_optical_flow(vid_item, dev_id=0):
         pass
 
     current = current_process()
-    dev_id = (int(current._identity[0]) - 1) % NUM_GPU
-    image_path = '{}/img'.format(out_full_path)
-    flow_x_path = '{}/flow_x'.format(out_full_path)
-    flow_y_path = '{}/flow_y'.format(out_full_path)
-
+    print(f"Running in process ID: {current.pid}")
+    print(f"Process Name: {current.name}")
+    ipdb.set_trace()
+    #dev_id = (int(current._identity[0]) - 1) % NUM_GPU
+    image_path = '{}img'.format(out_full_path)
+    flow_x_path = '{}flow_x'.format(out_full_path)
+    flow_y_path = '{}flow_y'.format(out_full_path)
+    
+    
     cmd = os.path.join(df_path + 'build/extract_gpu')+' -f {} -x {} -y {} -i {} -b 20 -t 1 -d {} -s 1 -o {} -w {} -h {}'.format(
         quote(vid_path), quote(flow_x_path), quote(flow_y_path), quote(image_path), dev_id, out_format, new_size[0], new_size[1])
-
+    
     os.system(cmd)
     print('{} {} done'.format(vid_id, vid_name))
     sys.stdout.flush()
@@ -125,6 +130,7 @@ if __name__ == '__main__':
         print("resuming from video: ", vid_list[0]) 
     pool = Pool(num_worker)
     if flow_type == 'tvl1':
-        pool.map(run_optical_flow, zip(vid_list, range(len(vid_list))))
+        run_optical_flow(vid_list[0], 0)
+        #pool.map(run_optical_flow, zip(vid_list, range(len(vid_list))))
     elif flow_type == 'warp_tvl1':
         pool.map(run_warp_optical_flow, zip(vid_list, range(len(vid_list))))
